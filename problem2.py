@@ -115,6 +115,10 @@ print("Assuming a liner cost function I = alpha*A + beta, the coefficients are")
 print(f"alpha = {alpha:.3}")
 print(f"beta = {beta:.3}")
 
+# Optimal area
+rho  = 18
+A = sqrt( rho*L*365/alpha/U**2*(p_max_new**2 * 6 *c_peak + p_min_new**2 * 18 * c_off_peak) )
+print(f"The optimal area is {A:.3}")
 # Task 1 (V2G)
 print("\n --- Task 1 (V2G) ---")
 
@@ -200,13 +204,13 @@ np.savetxt("P0-xcoeff.dat", np.c_[x_coeff, P0], fmt = "%.3f")
 
 # disount rate dependence
 x_coeff = 0.25
-discount_rate = np.linspace(0.03, 0.12, 100)
+discount_rate = np.linspace(0.03, 0.12, 50)
 
 P0 = np.zeros(len(discount_rate))
 for i,dr in enumerate(discount_rate):
   P0[i] = inital_payment(invcost90+loss90, type, x_coeff, dr, etaC, etaD, c_peak, c_off_peak, tC, tD, U, L, years)
   
-np.savetxt("P0-discount.dat", np.c_[discount_rate, P0], fmt = "%.3f")
+np.savetxt("P0-discount.dat", np.c_[discount_rate, P0], fmt = "%.5f")
 
 # Battery loss dependence
 discount_rate = 0.08
