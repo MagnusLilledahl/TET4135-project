@@ -14,7 +14,7 @@ emission_by_tech = {
 }
 emission_price = 60
 
-NOx_by_tech = {
+NOx_by_tech = { # NOx emissions from each technology
     'coal': 0,
     'gas': 0.1,
     'nuclear': 0,
@@ -34,33 +34,33 @@ model.NOx = pyo.Var(model.T, within=pyo.NonNegativeReals)
 
 ### Bounds
 
-def tech_load_bounds(model, time, tech):
+def tech_load_bounds(model, time, tech): # bounds for production per technology
     return (min_load_tech[tech], max_load_tech[tech])
 model.tech_load = pyo.Var(model.T, model.tech, bounds=tech_load_bounds, initialize=0)
 
 ### Constraints
 
-def load_rule(model, time, t):
+def load_rule(model, time, t):  # Set load sum to required load
     return sum([model.tech_load[time, tech] for tech in model.tech]) == load[time]
 model.load_constraint = pyo.Constraint(model.T, model.tech, rule=load_rule)
 
-def on_off_rule(model, time, tech):
+def on_off_rule(model, time, tech): # Set binary variable
     return model.tech_load[time, tech] <= max_load_tech[tech] * model.tech_on[time, tech]
 model.on_off_constraint = pyo.Constraint(model.T, model.tech, rule=on_off_rule)
 
-def emission_rule(model, time):
+def emission_rule(model, time): # Constraint to set total CO2 emissions
     return sum(
         [emission_by_tech[tech]*model.tech_load[time,tech] for tech in model.tech]
     ) == model.emission[time]
 model.emission_constraint = pyo.Constraint(model.T, rule=emission_rule)
 
-def NOx_limit_rule(model):
+def NOx_limit_rule(model): # Maximal bound on total NOx emissions
     return sum(
         [model.NOx[time] for time in model.T]
     ) <= daily_NOx_limit
 model.NOx_limit_constraint = pyo.Constraint(rule=NOx_limit_rule)
 
-def NOx_rule(model, time):
+def NOx_rule(model, time): # Constraint to set total NOx emissions
     return sum(
         [model.tech_load[time, tech] * NOx_by_tech[tech] for tech in model.tech]
     ) == model.NOx[time]
@@ -109,7 +109,9 @@ plt.legend(model.tech)
 plt.grid()
 plt.show()
 
-print("CO2 emissions", sum([model.emission[time].value for time in model.T]))
+print("CO2 emissions", sum([model.emission[time].value for time in model.T])) # Total CO2 emissions
+
+# Plot CO2 emissions
 
 plt.bar([i for i in model.T], [model.emission[time].value for time in model.T])
 plt.xlabel('Time (hours)')
@@ -118,6 +120,8 @@ plt.title('CO2 Emissions')
 plt.xticks([i for i in range(0,24,6)])
 plt.grid()
 plt.show()
+
+# Plot NOx emission
 
 plt.bar([i for i in model.T], [model.NOx[time].value for time in model.T])
 plt.xlabel('Time (hours)')

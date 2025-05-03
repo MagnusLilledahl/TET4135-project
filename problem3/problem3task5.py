@@ -25,22 +25,22 @@ variable_costs_tech = {
 model = pyo.ConcreteModel()
 
 model.T = pyo.RangeSet(0, len(load) - 1)  # Time periods
-model.tech = pyo.Set(initialize=fixed_costs_tech.keys())  # Technologies
-model.tech_on = pyo.Var(model.T, model.tech, within=pyo.Binary)
+model.tech = pyo.Set(initialize=fixed_costs_tech.keys())  # Set of Technologies
+model.tech_on = pyo.Var(model.T, model.tech, within=pyo.Binary) # Binary variable to describe whether variable is on or off
 
 ### Bounds
 
-def tech_load_bounds(model, time, tech):
+def tech_load_bounds(model, time, tech): # bounds for production per technology
     return (min_load_tech[tech], max_load_tech[tech])
 model.tech_load = pyo.Var(model.T, model.tech, bounds=tech_load_bounds, initialize=0)
 
 ### Constraints
 
-def load_rule(model, time, t):
+def load_rule(model, time, t): # Set load sum to required load
     return sum([model.tech_load[time, tech] for tech in model.tech]) == load[time]
 model.load_constraint = pyo.Constraint(model.T, model.tech, rule=load_rule)
 
-def on_off_rule(model, time, tech):
+def on_off_rule(model, time, tech): # Set binary variable
     return model.tech_load[time, tech] <= max_load_tech[tech] * model.tech_on[time, tech]
 model.on_off_constraint = pyo.Constraint(model.T, model.tech, rule=on_off_rule)
 
@@ -66,6 +66,8 @@ solver = SolverFactory('glpk')
 results = solver.solve(model, tee=True)
 
 print("\n")
+
+### Plotting results
 
 model.display()
 
