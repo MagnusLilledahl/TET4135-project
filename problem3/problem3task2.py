@@ -16,30 +16,30 @@ battery_efficiency = 0.95  # Efficiency of the battery
 model = pyo.ConcreteModel()
 
 model.T = pyo.RangeSet(0, len(load) - 1)  # Time periods
-model.tech = pyo.Set(initialize=fixed_costs_tech.keys())  # Technologies
-model.tech_on = pyo.Var(model.T, model.tech, within=pyo.Binary)
+model.tech = pyo.Set(initialize=fixed_costs_tech.keys())  # Set of Technologies
+model.tech_on = pyo.Var(model.T, model.tech, within=pyo.Binary) # Binary variable to describe whether variable is on or off
 
 ### Bounds
 
-def tech_load_bounds(model, time, tech):
+def tech_load_bounds(model, time, tech): # bounds for production per technology
     return (min_load_tech[tech], max_load_tech[tech])
 model.tech_load = pyo.Var(model.T, model.tech, bounds=tech_load_bounds, initialize=0)
 
-def battery_load_bounds(model, time):
+def battery_load_bounds(model, time): # battery load bounds
     return (0, max_batery_load)
 model.battery_load = pyo.Var(model.T, bounds=battery_load_bounds, initialize=0)
 
-def battery_charge_bounds(model, time):
+def battery_charge_bounds(model, time): # bounds for charging battery
     return (0, max_battery_charge)
 model.battery_charge = pyo.Var(model.T, bounds=battery_charge_bounds, initialize=0)
 
-def battery_discharge_bounds(model, time):
+def battery_discharge_bounds(model, time): # bonuds for discharging battery
     return (0, max_battery_discharge)
 model.battery_discharge = pyo.Var(model.T, bounds=battery_discharge_bounds, initialize=0)
 
 ### Constraints
 
-def load_rule(model, time, t):
+def load_rule(model, time, t): # Set load sum to required load
     return (sum(
         [model.tech_load[time, tech] for tech in model.tech])
         + model.battery_discharge[time]
@@ -47,11 +47,11 @@ def load_rule(model, time, t):
         == load[time])
 model.load_constraint = pyo.Constraint(model.T, model.tech, rule=load_rule)
 
-def on_off_rule(model, time, tech):
+def on_off_rule(model, time, tech): # Set binary variable
     return model.tech_load[time, tech] <= max_load_tech[tech] * model.tech_on[time, tech]
 model.on_off_constraint = pyo.Constraint(model.T, model.tech, rule=on_off_rule)
 
-def battery_load_rule(model, time):
+def battery_load_rule(model, time): # Battery balance in time
     return (model.battery_load[time]
             == model.battery_load[(time - 1) % 24]
             + battery_efficiency * model.battery_charge[(time - 1) % 24]
